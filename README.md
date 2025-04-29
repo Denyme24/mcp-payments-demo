@@ -11,6 +11,11 @@ This demo project:
 - Retrieves payment records where `done` is true (successfully completed payments)
 - Serves as a reference implementation for MCP server usage
 
+### MCP Inspector View
+
+![MCP Inspector showing payment records](mcp_inspector.png)
+_The image above shows the MCP Inspector interface displaying the payment records retrieved from MongoDB Atlas through the MCP server._
+
 ## Important Note
 
 This project is for demonstration purposes only. The MongoDB connection and resource configurations are specific to the author's MongoDB Atlas database. You cannot directly use this project as-is since it's configured for a specific database instance.
