@@ -1,75 +1,120 @@
-# MCP Server - NextApp Payments Resource (Demo)
+# NextApp Payments MCP Server Demo
 
-This is a demonstration project showcasing how to implement a Model Context Protocol (MCP) server to access payment data from a MongoDB Atlas database. The project serves as an example of how to use the MCP protocol to expose database resources through a standardized interface.
+A demonstration project showcasing how to implement a Model Context Protocol (MCP) server that exposes MongoDB payment data through both MCP Inspector and Claude AI integration. This project serves as an example of how to use the MCP protocol to expose database resources through a standardized interface.
 
 ## Project Overview
 
-This demo project:
+This demo project demonstrates:
 
-- Implements an MCP server using the official SDK
-- Connects to a specific MongoDB Atlas database
-- Retrieves payment records where `done` is true (successfully completed payments)
-- Serves as a reference implementation for MCP server usage
+- Implementation of an MCP server using the official SDK
+- Connection to a specific MongoDB Atlas database
+- Retrieval of payment records where `done: true` (successfully completed payments)
+- Integration with both MCP Inspector and Claude AI
+- How LLMs can interact with structured database data
 
-### MCP Inspector View
+## MCP Inspector View
 
 ![MCP Inspector showing payment records](mcp_inspector.png)
-_The image above shows the MCP Inspector interface displaying the payment records retrieved from MongoDB Atlas through the MCP server._
 
-## Important Note
+The image above shows the MCP Inspector interface displaying the payment records retrieved from MongoDB Atlas through the MCP server. MCP Inspector is a developer tool that helps verify and debug MCP server implementations.
 
-This project is for demonstration purposes only. The MongoDB connection and resource configurations are specific to the author's MongoDB Atlas database. You cannot directly use this project as-is since it's configured for a specific database instance.
+## Claude AI Integration
 
-## What You Can Learn From This Demo
+![Claude LLM Result](claude_llm_result.png)
 
-- How to set up an MCP server
-- How to connect MCP server to MongoDB Atlas
-- How to define resource templates for database access
-- How to handle database operations through MCP
-- Error handling patterns for MCP server implementation
+The image above demonstrates Claude AI successfully:
 
-## Project Structure
+- Connecting to the MCP server
+- Accessing the payments resource
+- Analyzing payment data
+- Presenting structured results with total amounts, date ranges, and key observations
 
-```
-mcp_server/
-├── index.js           # Main server implementation
-├── package.json       # Project configuration and dependencies
-├── package-lock.json  # Dependency lock file
-└── .env              # Environment variables (not included in repo)
-```
+### Setting Up Your MCP Resource in Claude Desktop
+
+If you have created your own MCP server and want to use it with Claude Desktop:
+
+1. **Locate Claude Desktop Config**
+
+   - Windows: `C:\Users\<username>\AppData\Roaming\claude\claude_desktop_config.json`
+   - macOS: `~/Library/Application Support/claude/claude_desktop_config.json`
+   - Linux: `~/.config/claude/claude_desktop_config.json`
+
+2. **Configure Your MCP Server**
+
+   ```json
+   {
+     "mcpServers": {
+       "YourServerName": {
+         "transport": "stdio",
+         "command": "node",
+         "args": ["path/to/your/server.js"],
+         "env": {
+           "YOUR_ENV_VARIABLE": "your_value"
+         },
+         "cwd": "path/to/your/project"
+       }
+     }
+   }
+   ```
+
+   Replace:
+
+   - `YourServerName`: A unique name for your server
+   - `path/to/your/server.js`: Full path to your server file
+   - `YOUR_ENV_VARIABLE`: Any environment variables your server needs
+
+3. **Verify Connection**
+
+   - Open Claude Desktop
+   - Go to Settings → Developer
+   - Your server should appear with a "running" status
+
+4. **Use Your Resource**
+   - In Claude chat, use:
+   ```
+   Use the MCP resource your-resource-uri and [your query]
+   ```
+   Example: "Use the MCP resource payments://done and show me all successful payments"
 
 ## Implementation Details
 
 ### MCP Resource
 
 - **URI**: `payments://done`
-- **Purpose**: Retrieves payment records where `done` is true
+- **Purpose**: Retrieves payment records where `done: true`
 - **Response Format**: JSON
 - **MIME Type**: `application/json`
 
-### Dependencies Used
+### Technologies Used
 
-- `@modelcontextprotocol/sdk`: ^1.10.2 - Official MCP SDK
-- `dotenv`: ^16.5.0 - Environment variable management
-- `mongodb`: ^6.16.0 - MongoDB Node.js driver
+- **MCP SDK**: For protocol handling and resource exposure
+- **MongoDB Driver**: For database access and query execution
+- **Claude Desktop**: For LLM integration and natural language querying
 
-## Error Handling
+### Error Handling
 
 The implementation includes error handling for:
 
 - MongoDB connection issues
 - Query execution errors
 - Connection closure errors
+- JSON-formatted logging for Claude Desktop compatibility
 
-## License
+## Important Notes
 
-ISC
+This is a demonstration project showing:
 
-## Note for Developers
+1. How to implement an MCP server
+2. How to expose MongoDB data as MCP resources
+3. Two ways to access the data:
+   - Through MCP Inspector (for developers)
+   - Through Claude AI (for end users)
+4. How LLMs can interact with structured data
 
-If you want to implement your own MCP server:
+The MongoDB connection and resource configurations are specific to this demo. You'll need to modify them for your use case.
 
-1. Create your own MongoDB database
-2. Update the connection string in `.env`
-3. Modify the resource template in `index.js` to match your data structure
-4. Implement your own error handling as needed
+## Resources
+
+- [Model Context Protocol Documentation](https://modelcontextprotocol.io/)
+- [Claude Desktop Documentation](https://claude.ai/docs)
+- [MongoDB Node.js Driver Documentation](https://mongodb.github.io/node-mongodb-native/)

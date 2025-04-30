@@ -31,8 +31,13 @@ server.resource("payments-done", "payments://done", async (uri) => {
     // Find all payments where done is true
     const payments = await paymentsCollection.find({ done: true }).toArray();
 
-    // Log the number of payments found
-    console.log(`Found ${payments.length} payments with done=true`);
+    // Log using console.error instead of console.log
+    console.error(
+      JSON.stringify({
+        type: "info",
+        message: `Found ${payments.length} payments with done=true`,
+      })
+    );
 
     // Return the payments data
     return {
@@ -46,7 +51,13 @@ server.resource("payments-done", "payments://done", async (uri) => {
     };
   } catch (error) {
     // Handle any errors that occur
-    console.error("MongoDB Error:", error);
+    console.error(
+      JSON.stringify({
+        type: "error",
+        message: "MongoDB Error",
+        error: error.message,
+      })
+    );
     return {
       contents: [
         {
@@ -68,7 +79,13 @@ server.resource("payments-done", "payments://done", async (uri) => {
     try {
       await client.close();
     } catch (closeError) {
-      console.error("Error closing MongoDB connection:", closeError);
+      console.error(
+        JSON.stringify({
+          type: "error",
+          message: "Error closing MongoDB connection",
+          error: closeError.message,
+        })
+      );
     }
   }
 });
@@ -78,7 +95,21 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  // console.log("MCP server started and connected to MongoDB Atlas");
+  // Log using JSON format
+  console.error(
+    JSON.stringify({
+      type: "info",
+      message: "MCP server started and connected to MongoDB Atlas",
+    })
+  );
 }
 
-main().catch(console.error);
+main().catch((error) =>
+  console.error(
+    JSON.stringify({
+      type: "error",
+      message: "Server error",
+      error: error.message,
+    })
+  )
+);
