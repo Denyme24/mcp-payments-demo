@@ -1,56 +1,105 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const server = new McpServer({
-  name: "NextApp Payments Resource",
-  version: "1.0.0",
-});
+const server = new Server(
+  {
+    name: "NextApp Payments Resource",
+    version: "1.0.0",
+  },
+  {
+    capabilities: {
+      resources: {},
+      tools: {},
+    },
+  }
+);
 
 // MongoDB connection setup
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+if (!uri) {
+  console.error(
+    JSON.stringify({
+      type: "error",
+      message: "MONGODB_URI environment variable is required",
+    })
+  );
+  process.exit(1);
+}
 
-// Define the payments resource template
-const paymentsResourceTemplate = new ResourceTemplate("payments://done");
+// List available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "get_completed_payments",
+        description: "Get all payments where done is true",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: "get_all_payments",
+        description: "Get all payments from the database",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      },
+    ],
+  };
+});
 
-// Register the payments resource
-server.resource("payments-done", "payments://done", async (uri) => {
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name } = request.params;
+
+  let mongoClient;
   try {
-    // Connect to MongoDB
-    await client.connect();
+    mongoClient = new MongoClient(process.env.MONGODB_URI);
+    await mongoClient.connect();
 
-    // Access the test collection and payments database
-    const db = client.db("test");
+    const db = mongoClient.db("test");
     const paymentsCollection = db.collection("payments");
 
-    // Find all payments where done is true
-    const payments = await paymentsCollection.find({ done: true }).toArray();
+    let payments;
+    let message;
 
-    // Log using console.error instead of console.log
+    if (name === "get_completed_payments") {
+      payments = await paymentsCollection.find({ done: true }).toArray();
+      message = `Found ${payments.length} completed payments`;
+    } else if (name === "get_all_payments") {
+      payments = await paymentsCollection.find({}).toArray();
+      message = `Found ${payments.length} total payments`;
+    } else {
+      throw new Error(`Unknown tool: ${name}`);
+    }
+
     console.error(
       JSON.stringify({
         type: "info",
-        message: `Found ${payments.length} payments with done=true`,
+        message: message,
       })
     );
 
-    // Return the payments data
     return {
-      contents: [
+      content: [
         {
-          uri: uri.href,
-          text: JSON.stringify(payments, null, 2),
-          mimeType: "application/json",
+          type: "text",
+          text: `${message}:\n\n${JSON.stringify(payments, null, 2)}`,
         },
       ],
     };
   } catch (error) {
-    // Handle any errors that occur
     console.error(
       JSON.stringify({
         type: "error",
@@ -58,35 +107,119 @@ server.resource("payments-done", "payments://done", async (uri) => {
         error: error.message,
       })
     );
+
     return {
-      contents: [
+      content: [
         {
-          uri: uri.href,
-          text: JSON.stringify(
-            {
-              error: "Failed to fetch payments",
-              message: error.message,
-            },
-            null,
-            2
-          ),
-          mimeType: "application/json",
+          type: "text",
+          text: `Error: ${error.message}`,
         },
       ],
+      isError: true,
     };
   } finally {
-    // Always close the connection
+    if (mongoClient) {
+      try {
+        await mongoClient.close();
+      } catch (closeError) {
+        console.error(
+          JSON.stringify({
+            type: "error",
+            message: "Error closing MongoDB connection",
+            error: closeError.message,
+          })
+        );
+      }
+    }
+  }
+});
+
+// List available resources
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return {
+    resources: [
+      {
+        uri: "payments://done",
+        name: "Completed Payments",
+        description: "All payments where done is true",
+        mimeType: "application/json",
+      },
+    ],
+  };
+});
+
+// Handle resource read requests
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  if (uri === "payments://done") {
+    let mongoClient;
     try {
-      await client.close();
-    } catch (closeError) {
+      mongoClient = new MongoClient(process.env.MONGODB_URI);
+      await mongoClient.connect();
+
+      const db = mongoClient.db("test");
+      const paymentsCollection = db.collection("payments");
+      const payments = await paymentsCollection.find({ done: true }).toArray();
+
+      console.error(
+        JSON.stringify({
+          type: "info",
+          message: `Found ${payments.length} payments with done=true`,
+        })
+      );
+
+      return {
+        contents: [
+          {
+            uri: uri,
+            text: JSON.stringify(payments, null, 2),
+            mimeType: "application/json",
+          },
+        ],
+      };
+    } catch (error) {
       console.error(
         JSON.stringify({
           type: "error",
-          message: "Error closing MongoDB connection",
-          error: closeError.message,
+          message: "MongoDB Error",
+          error: error.message,
         })
       );
+
+      return {
+        contents: [
+          {
+            uri: uri,
+            text: JSON.stringify(
+              {
+                error: "Failed to fetch payments",
+                message: error.message,
+              },
+              null,
+              2
+            ),
+            mimeType: "application/json",
+          },
+        ],
+      };
+    } finally {
+      if (mongoClient) {
+        try {
+          await mongoClient.close();
+        } catch (closeError) {
+          console.error(
+            JSON.stringify({
+              type: "error",
+              message: "Error closing MongoDB connection",
+              error: closeError.message,
+            })
+          );
+        }
+      }
     }
+  } else {
+    throw new Error(`Unknown resource: ${uri}`);
   }
 });
 
@@ -95,11 +228,10 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  // Log using JSON format
   console.error(
     JSON.stringify({
       type: "info",
-      message: "MCP server started and connected to MongoDB Atlas",
+      message: "MCP server started with tools and resources",
     })
   );
 }
@@ -108,7 +240,7 @@ main().catch((error) =>
   console.error(
     JSON.stringify({
       type: "error",
-      message: "Server error",
+      message: "Server startup error",
       error: error.message,
     })
   )
