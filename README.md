@@ -8,9 +8,31 @@ This demo project demonstrates:
 
 - Implementation of an MCP server using the official SDK
 - Connection to a specific MongoDB Atlas database
-- Retrieval of payment records where `done: true` (successfully completed payments)
+- Exposure of payment data through both MCP Resources and Tools
 - Integration with both MCP Inspector and Claude AI
 - How LLMs can interact with structured database data
+
+## Features
+
+### MCP Resources
+
+- **URI**: `payments://done`
+- **Purpose**: Retrieves payment records where `done: true`
+- **Response Format**: JSON
+- **MIME Type**: `application/json`
+
+### MCP Tools
+
+1. **get_completed_payments**
+
+   - Description: Retrieves all payments where done is true
+   - Input: No parameters required
+   - Output: JSON array of completed payments
+
+2. **get_all_payments**
+   - Description: Retrieves all payments from the database
+   - Input: No parameters required
+   - Output: JSON array of all payments
 
 ## MCP Inspector View
 
@@ -25,7 +47,7 @@ The image above shows the MCP Inspector interface displaying the payment records
 The image above demonstrates Claude AI successfully:
 
 - Connecting to the MCP server
-- Accessing the payments resource
+- Accessing the payments resource and tools
 - Analyzing payment data
 - Presenting structured results with total amounts, date ranges, and key observations
 
@@ -69,25 +91,22 @@ If you have created your own MCP server and want to use it with Claude Desktop:
    - Go to Settings → Developer
    - Your server should appear with a "running" status
 
-4. **Use Your Resource**
-   - In Claude chat, use:
+4. **Use Your Resource or Tools**
+
    ```
-   Use the MCP resource your-resource-uri and [your query]
+   # Using Resource
+   Use the MCP resource payments://done and [your query]
+
+   # Using Tools
+   Use the MCP tool get_completed_payments to show me all successful payments
+   Use the MCP tool get_all_payments to show me all payments in the system
    ```
-   Example: "Use the MCP resource payments://done and show me all successful payments"
 
 ## Implementation Details
 
-### MCP Resource
-
-- **URI**: `payments://done`
-- **Purpose**: Retrieves payment records where `done: true`
-- **Response Format**: JSON
-- **MIME Type**: `application/json`
-
 ### Technologies Used
 
-- **MCP SDK**: For protocol handling and resource exposure
+- **MCP SDK**: For protocol handling and resource/tool exposure
 - **MongoDB Driver**: For database access and query execution
 - **Claude Desktop**: For LLM integration and natural language querying
 
@@ -105,10 +124,11 @@ The implementation includes error handling for:
 This is a demonstration project showing:
 
 1. How to implement an MCP server
-2. How to expose MongoDB data as MCP resources
-3. Two ways to access the data:
+2. How to expose MongoDB data as both MCP resources and tools
+3. Multiple ways to access the data:
    - Through MCP Inspector (for developers)
    - Through Claude AI (for end users)
+   - Through direct tool calls
 4. How LLMs can interact with structured data
 
 The MongoDB connection and resource configurations are specific to this demo. You'll need to modify them for your use case.
