@@ -2,6 +2,8 @@
 
 A demonstration project showcasing how to implement a Model Context Protocol (MCP) server that exposes MongoDB payment data through both MCP Inspector and Claude AI integration. This project serves as an example of how to use the MCP protocol to expose database resources through a standardized interface.
 
+📝 For a detailed, step-by-step guide on building this MCP server from scratch, check out my [comprehensive blog post](https://dev.to/denyme24/model-context-protocol-mcp-explained-built-from-scratch-4fpa).
+
 ## Project Overview
 
 This demo project demonstrates:
